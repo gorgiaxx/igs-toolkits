@@ -1,0 +1,29 @@
+[Name]
+sqfscat - tool to cat files from a squashfs filesystem to stdout
+
+[Description]
+Squashfs is a highly compressed read-only filesystem for Linux.
+It uses either gzip/xz/lzo/lz4/zstd compression to compress both files, inodes
+and directories.  Inodes in the system are very small and all blocks are
+packed to minimise data overhead. Block sizes greater than 4K are supported
+up to a maximum of 1Mbytes (default block size 128K).
+
+Squashfs is intended for general read-only filesystem use, for archival
+use (i.e. in cases where a .tar.gz file may be used), and in constrained
+block device/memory systems (e.g. embedded systems) where low overhead is
+needed.
+
+[Examples]
+.TP
+sqfscat IMAGE.SQFS hello
+Output the contents of "hello" to stdout.
+.TP
+sqfscat IMAGE.SQFS hello world
+Output the contents of "hello" and then "world" to stdout.
+.TP
+sqfscat IMAGE.SQFS "*.[ch]"
+Output the contents of all the files in the root directory that match the
+wildcard *.[ch], to stdout, e.g.  hello.c, hello.h, world.c, world.h.
+.PP
+Note: when passing wildcarded names to Sqfscat, they should be quoted (as in
+the above examples), to ensure that they are not processed by the shell.

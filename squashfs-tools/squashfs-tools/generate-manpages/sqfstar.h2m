@@ -1,0 +1,94 @@
+[Name]
+sqfstar - tool to create a squashfs filesystem from a tar archive
+
+[Synopsis]
+  cat xxx.tar | sqfstar [OPTIONS] FILESYSTEM [exclude files]
+  zcat xxx.tgz | sqfstar [OPTIONS] FILESYSTEM [exclude files]
+  xzcat xxx.tar.xz | sqfstar [OPTIONS] FILESYSTEM [exclude files]
+  zstdcat xxx.tar.zst | sqfstar [OPTIONS] FILESYSTEM [exclude files]
+
+[Description]
+Squashfs is a highly compressed read-only filesystem for Linux.
+It uses either gzip/xz/lzo/lz4/zstd compression to compress both files, inodes
+and directories.  Inodes in the system are very small and all blocks are
+packed to minimise data overhead. Block sizes greater than 4K are supported
+up to a maximum of 1Mbytes (default block size 128K).
+
+Squashfs is intended for general read-only filesystem use, for archival
+use (i.e. in cases where a .tar.gz file may be used), and in constrained
+block device/memory systems (e.g. embedded systems) where low overhead is
+needed.
+
+[Examples]
+.TP
+sqfstar IMAGE.SQFS < archive.tar
+Create a Squashfs filesystem from the uncompressed tar file "archive.tar".
+Sqfstar will use the default compressor (normally gzip), and block size of 128
+Kbytes.
+.TP
+zcat archive.tgz | sqfstar IMAGE.SQFS
+Create a Squashfs filesystem from the compressed tar file "archive.tgz". Sqfstar
+will use the default compressor (normally gzip), and block size of 128 Kbytes.
+.TP
+sqfstar -b 1M -comp zstd IMAGE.SQFS < archive.tar
+Use a block size of 1 Mbyte and Zstandard compression to create the filesystem. 
+.TP
+sqfstar -root-uid 0 -root-gid 0 IMAGE.SQFS < archive.tar
+Tar files do not supply a definition for the root directory, and the default is
+to make the directory owned/group owned by the user running Sqfstar.  The above
+command sets the ownership/group ownership to root.
+.TP
+sqfstar -root-mode 0755 IMAGE.SQFS < archive.tar
+The default permissions for the root directory is 0777 (rwxrwxrwx).  The above
+command sets the permissions to 0755 (rwxr-xr-x).
+.TP
+sqfstar -all-time now IMAGE.SQFS < archive.tar
+Set all file and directory timestamps to "now" (current time) in the filesystem.
+.TP
+sqfstar -force-uid phillip -force-gid phillip IMAGE.SQFS < archive.tar
+Make all files and directories in the filesystem owned by "phillip".
+.TP
+sqfstar -force-file-mode ugo+r,go-w IMAGE.SQFS < archive.tar
+Make all files readable by everyone, but only writable by user, all other
+permission bits are unaffected.
+.TP
+sqfstar IMAGE.SQFS file1 file2 < archive.tar
+Exclude file1 and file2 from the tar file when creating filesystem.
+.TP
+sqfstar IMAGE.SQFS "*.gz" < archive.tar
+Exclude any files in the top level directory which matches the wildcard pattern
+"*.gz".
+.TP
+sqfstar IMAGE.SQFS "... *.gz" < archive.tar
+Exclude any file which matches the wildcard pattern "*.gz" anywhere within the
+tar file.  The initial "..." indicates the wildcard pattern is "non-anchored"
+and will match anywhere.
+.PP
+Note: when passing wildcarded names to Sqfstar, they should be quoted (as in
+the above examples), to ensure that they are not processed by the shell.
+
+.SS Using pseudo file definitions
+.TP
+sqfstar -p "build_dir d 0644 0 0" IMAGE.SQFS < archive.tar
+Create a directory called "build_dir" in the output filesystem.
+.TP
+sqfstar -p "version.txt l /tmp/build/version" IMAGE.SQFS < archive.tar
+Create a reference called "version.txt" to a file not in the tar archive,
+which acts as if that file was in the tar archive.
+.TP
+sqfstar -p "date.txt f 0644 0 0 date" IMAGE.SQFS < archive.tar
+Create a file called "date.txt" which holds the output (stdout) from running
+the "date" command.
+.TP
+sqfstar -p "\\"hello world\\" f 0644 0 0 date" IMAGE.SQFS < archive.tar
+As above, but, showing that filenames can have spaces, if they are quoted.
+The quotes need to be blackslashed to protect them from the shell.
+.TP
+sqfstar -p "input f 0644 root root dd if=/dev/sda1 bs=1024" IMAGE.SQFS < archive.tar
+Create a file containing the contents of partition /dev/sda1".  The above allows
+input from these special files to be captured and placed in the Squashfs
+filesystem.
+.PP
+Note: pseudo file definitions should be quoted (as in the above examples), to
+ensure that they are passed to Mksquashfs as a single argument, and to ensure
+that they are not processed by the shell.
